@@ -36,11 +36,33 @@ df_order.isnull().values.any()
 # delivery status
 sns.countplot(x='Delivery Status', data = df_order)
 
-# delievery status vs type
+# delivery status vs type
 sns.countplot(x='Type', hue='Delivery Status', data = df_order)
 
-# delievery status vs Market
+# delivery status vs market
 sns.countplot(x='Market', hue='Delivery Status', data = df_order)
 
-# delievery status vs Country
+# delivery status vs country
 sns.countplot(x='Order Country', hue='Delivery Status', data = df_order)
+
+# delivery status vs order department
+sns.countplot(x='Order Department Id', hue='Delivery Status', data = df_order)
+
+# delivery status vs late delivery risk
+sns.countplot(x='Late Delivery Risk', hue='Delivery Status', data = df_order)
+
+# time series effect?
+df_order['order_year']= pd.DatetimeIndex(df_order['order date (DateOrders)']).year
+df_order['order_month'] = pd.DatetimeIndex(df_order['order date (DateOrders)']).month
+df_order['order_week_day'] = pd.DatetimeIndex(df_order['order date (DateOrders)']).weekday
+df_order['order_hour'] = pd.DatetimeIndex(df_order['order date (DateOrders)']).hour
+df_order['order_month_year'] = pd.to_datetime(df_order['order date (DateOrders)']).dt.to_period('M')
+
+sns.countplot(x='order_year', hue='Delivery Status', data = df_order)
+sns.countplot(x='order_month', hue='Delivery Status', data = df_order)
+
+df_time = df_order.value_counts(subset=['Delivery Status', 'order_month','order_year'], sort=False)
+df_time = df_time.reset_index()
+df_time.rename(columns={0:'count'})
+sns.lineplot(data=df_time, x='order_month', y=0, hue = 'order_year', style='Delivery Status')
+
