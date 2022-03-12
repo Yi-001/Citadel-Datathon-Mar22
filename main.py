@@ -3,8 +3,13 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
-
-
+from sklearn import preprocessing
+from sklearn.pipeline import make_pipeline
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import cross_val_score, cross_validate
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
 # class Wrangler:
 #     def __init__(self, directory_path):
 #         self.directory_path = directory_path
@@ -56,7 +61,7 @@ df_order['order_year']= pd.DatetimeIndex(df_order['order date (DateOrders)']).ye
 df_order['order_month'] = pd.DatetimeIndex(df_order['order date (DateOrders)']).month
 df_order['order_week_day'] = pd.DatetimeIndex(df_order['order date (DateOrders)']).weekday
 df_order['order_hour'] = pd.DatetimeIndex(df_order['order date (DateOrders)']).hour
-df_order['order_month_year'] = pd.to_datetime(df_order['order date (DateOrders)']).dt.to_period('M')
+
 
 sns.countplot(x='order_year', hue='Delivery Status', data = df_order)
 sns.countplot(x='order_month', hue='Delivery Status', data = df_order)
@@ -66,3 +71,25 @@ df_time = df_time.reset_index()
 df_time.rename(columns={0:'count'})
 sns.lineplot(data=df_time, x='order_month', y=0, hue = 'order_year', style='Delivery Status')
 
+# delivery status prediction
+# need to do a PCA first?
+train_data=df_order.copy()
+train_data=train_data.drop(['Order Id','Order Customer Id','Order City','Order State','Order Zipcode','order date (DateOrders)', 'Order Item Discount','Order Item Id','Sales','Order Item Total','Days for shipping (real)','Late Delivery Risk'], axis=1)
+
+train_data.info()
+le = preprocessing.LabelEncoder()
+train_data['Market'] = le.fit_transform(train_data['Market'])
+train_data['Order Country'] = le.fit_transform(train_data['Order Country'])
+train_data['Order Region'] = le.fit_transform(train_data['Order Region'])
+train_data['Order Status'] = le.fit_transform(train_data['Order Status'])
+train_data['Type']   = le.fit_transform(train_data['Type'])
+train_data['Delivery Status'] = le.fit_transform(train_data['Delivery Status'])
+
+train_data.head()
+x=train_data.loc[:, train_data.columns != 'Delivery Status']
+y=train_data['Delivery Status']
+X_train, X_test, y_train, y_test = train_test_split(x, y, test_size = 0.2, random_state = 42)
+knn_pipline = Pipeline([("scaler", StandardScaler()), ("KNeighborsClassifier", KNeighborsClassifier())])
+model = knn_pipline.fit(X_train, y_train)
+knn_train_predict = pd.DataFrame({'actual' : y_train,'predicted' : model.predict(X_train)})
+knn_train_predict.head()
